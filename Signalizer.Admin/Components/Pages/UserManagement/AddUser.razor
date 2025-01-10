@@ -1,0 +1,137 @@
+﻿@page "/AddUser"
+@using Signalizer.Entities
+@using Signalizer.Entities.Models
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory ClientFactory
+
+
+<MudCard Elevation="25">
+    <MudText Align="Align.Left" Typo="Typo.h4" Style="margin-left:10px;margin-top:10px;margin-top:10px"><b>Add New User</b></MudText>
+
+    <MudDivider style="background-color:black" DividerType="DividerType.Middle" Class="my-6" />
+    <MudCard Elevation="0" Class="pa-4">
+        <MudForm>
+            <MudText Color="Color.Dark"><b>User Name</b></MudText>
+            <MudTextField Margin="Margin.Dense" Style="height:25px;width:50%" T="string" Placeholder="User Name" @bind-Value="user.Username" Clearable="true" />
+            <MudText Style="padding-bottom:20px"></MudText>
+
+            <MudText Color="Color.Dark"><b>Email</b></MudText>
+            <MudTextField Margin="Margin.Dense" Style="height:25px;width:50%" T="string" Placeholder="Email" @bind-Value="user.Email" Clearable="true" />
+            <MudText Style="padding-bottom:20px"></MudText>
+
+            <MudText Color="Color.Dark"><b>Password</b></MudText>
+            <MudTextField Margin="Margin.Dense" Style="height:25px;width:50%" Placeholder="Password" @bind-Value="user.Password"
+                          InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon"
+                          OnAdornmentClick="ButtonTestClick" AdornmentAriaLabel="Show Password" Clearable="true" />
+            <MudText Style="padding-bottom:20px"></MudText>
+
+            <MudPaper Class="pa-4 mt-4">
+                <MudButton @onclick="@Save" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
+                <MudButton @onclick="@Cancel" Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+                <MudText Style="padding-bottom:20px"></MudText>
+            </MudPaper>
+        </MudForm>
+    </MudCard>
+</MudCard>
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    private bool errors;
+    private string[] errorList = [];
+    bool isPasswordShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    private UserModel user = new UserModel();
+    private List<UserModel> userList = new List<UserModel>();
+
+    void ButtonTestClick()
+    {
+        if (isPasswordShow)
+        {
+            isPasswordShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isPasswordShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrWhiteSpace(user.Username))
+        {
+            SetErrorAndDisplayMessage("User Name is required.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            SetErrorAndDisplayMessage("Email is required.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Password))
+        {
+            SetErrorAndDisplayMessage("Password is required.");
+            return;
+        }
+
+        var client = ClientFactory.CreateClient("BackendService");
+        var msg = new AddUserRequestMessage()
+            {
+                UserModel = user
+            };
+
+        var responseStr = await CallApiPostMethodAsync(client, msg, "AddUser");
+        var response = Newtonsoft.Json.JsonConvert.DeserializeObject<AddUserResponseMessage>(responseStr);
+        SnackbarMessage(response.ResponseDescription, Severity.Success);
+
+        NavigationManager.NavigateTo("/listUsers");
+    }
+
+    private async Task<string> CallApiPostMethodAsync(HttpClient client, AddUserRequestMessage msg, string action)
+    {
+        using (HttpResponseMessage response = await client.PostAsJsonAsync($"/api/CommandService/{action}", msg))
+        {
+            using (HttpContent content = response.Content)
+            {
+                return await ProcessResponse(response, content);
+            }
+        }
+    }
+
+    private async Task<string> ProcessResponse(HttpResponseMessage response, HttpContent content)
+    {
+        string resultString = await content.ReadAsStringAsync();
+        string reasonPhrase = response.ReasonPhrase;
+
+        return resultString;
+    }
+
+    void Cancel()
+    {
+        NavigationManager.NavigateTo("/listUsers");
+    }
+
+    void SnackbarMessage(string message, Severity severity)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add(message, severity);
+    }
+
+    void SetErrorAndDisplayMessage(string message)
+    {
+        errors = true;
+        errorList = [message];
+        SnackbarMessage(message, Severity.Error);
+    }
+}

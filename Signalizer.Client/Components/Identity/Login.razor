@@ -1,0 +1,112 @@
+@page "/login"
+@layout EmptyLayout
+@using Signalizer.Client
+@using Signalizer.Entities.Models
+@inject NavigationManager Navigation
+@inject IAccountManagement Acct
+
+<PageTitle>Login</PageTitle>
+<MudContainer Class="d-flex justify-center" >
+    <AuthorizeView Context="authContext">
+        <Authorized>
+            <div class="alert alert-success">You're logged in as @authContext.User.Identity?.Name.</div>
+        </Authorized>
+        <NotAuthorized>
+            @{
+                if (errors)
+                {
+                    foreach (var error in errorList)
+                    {
+                        <div class="alert alert-danger">@error</div>
+                    }
+                }
+            }
+            <EditForm EditContext="@editContext">
+                <MudCard Style="max-width:500px;">
+                    <MudCardContent Class="d-flex flex-column align-items-center" Style=" padding:50px;">
+                        <MudAvatar Style="width: 64px; height: 64px; margin-bottom: 1rem;" class="align-self-center" Color="Color.Default" Variant="Variant.Filled">
+                            <MudIcon Color="Color.Dark" Style="width: 64px; height: 64px;" class="align-self-center"  Icon=@Icons.Material.Filled.Person Size="Size.Large" />
+                        </MudAvatar>
+                        <MudTextField InputType="InputType.Email" @bind-Value="email" Label="Email address" style="min-width:25vw" Variant="Variant.Outlined" class="align-self-center"></MudTextField>
+                        <MudTextField @bind-Value="password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" style="min-width:25vw" class="align-self-center"
+                                      Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+                    </MudCardContent>
+                    <MudCardActions class="align-self-center mb-5">
+                        <MudButton  OnClick="DoLoginAsync" Variant="Variant.Filled" Color="Color.Primary">Sign In</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudContainer>
+
+@code {
+    private bool success, errors;
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string[] errorList = [];
+    bool isShow;
+    private EditContext? editContext;
+    public LoginModel? _model { get; set; }
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    protected override void OnInitialized()
+    {
+        _model ??= new();
+        editContext = new(_model);
+    }
+
+    void ButtonTestclick()
+    {
+        if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    public async Task DoLoginAsync()
+    {
+        success = errors = false;
+        errorList = [];
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            errors = true;
+            errorList = ["Email is required."];
+            return;
+
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errors = true;
+            errorList = ["Password is required."];
+            return;
+        }
+
+        var result = await Acct.LoginAsync(email, password);
+
+        if (result.Succeeded)
+        {
+            success = true;
+            email = password = string.Empty;
+            Navigation.NavigateTo("/");
+        }
+
+        else
+        {
+            errors = true;
+            errorList = result.ErrorList;
+        }
+
+    }
+}

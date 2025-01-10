@@ -1,0 +1,130 @@
+﻿@page "/strategyManagement"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Signalizer.Client.State_Management
+@using Signalizer.Entities
+@using Signalizer.Entities.Dtos
+@using Signalizer.Entities.Enums
+@using Signalizer.Entities.Models
+@inject IConfiguration Configuration
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory ClientFactory
+@inject StrategyManagementState ModuleState
+@inject NavigationManager NavigationManager
+
+<PageTitle>Strategy Management</PageTitle>
+
+<MudCard Class="ml-10 mr-10" style="margin-top:30px" Elevation="25">
+    <MudText Align="Align.Left" Typo="Typo.h4" Style="margin-left:10px;margin-top:10px;margin-top:10px"><b>Strategy Management</b></MudText>
+
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Text" Color="Color.Primary" Href="/AddStrategy">Add new strategy</MudButton>
+
+    <MudSimpleTable>
+        <thead>
+            <MudTr>
+                <MudTh>Strategy Type</MudTh>
+                <MudTh>Trading Pair</MudTh>
+                <MudTh>Interval</MudTh>
+                <MudTh>Create Date</MudTh>
+                <MudTh>Update Date</MudTh>
+                <MudTh></MudTh>
+            </MudTr>
+        </thead>
+        <tbody>
+            @foreach (var strategy in strategyList)
+            {
+                <tr>
+                    <MudTd DataLabel="Strategy Type" Style="width:400px;height:50px;">@GetStrategyName(strategy.StrategyType)</MudTd>
+                    <MudTd DataLabel="Trading Pair" Style="width:400px;height:50px;">@strategy.TradingPair.Base/@strategy.TradingPair.Quote</MudTd>
+                    <MudTd DataLabel="Interval" Style="width:400px;height:50px;">@strategy.Interval</MudTd>
+                    <MudTd DataLabel="Create Date" Style="width:400px;height:50px;">@strategy.CreateDate</MudTd>
+                    <MudTd DataLabel="Update Date" Style="width:400px;height:50px;">@(strategy.UpdateDate ?? strategy.CreateDate)</MudTd>
+                    <MudTd>
+                        <MudIconButton @onclick="@(()=> NavigateToEdit(strategy))" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                        <MudIconButton @onclick="@(()=> Delete(strategy.Id.Value))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                    </MudTd>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+</MudCard>
+
+@code {
+    private SignalStrategy strategy;
+    private List<SignalStrategy> strategyList = new List<SignalStrategy>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        strategyList = await GetAllStrategyList();
+    }
+
+    private async Task<List<SignalStrategy>> GetAllStrategyList()
+    {
+        var client = ClientFactory.CreateClient("BackendService");
+
+        var msg = new ListStrategyRequest()
+            {
+                StrategyType = strategy == null ? -1 : strategy.StrategyType,
+                Symbol = strategy == null ? string.Empty : strategy.TradingPair.Base + strategy.TradingPair.Quote,
+                Interval = strategy == null ? -1 : strategy.Interval,
+                IncludePredefined = false
+            };
+
+        var responseStr = await CallApiPostMethodAsync(client, msg, "ListStrategies");
+        var response = Newtonsoft.Json.JsonConvert.DeserializeObject<ListStrategyResponseMessage>(responseStr);
+        return response.SignalStrategies;
+    }
+
+    private async Task<string> CallApiPostMethodAsync(HttpClient client, ListStrategyRequest msg, string action)
+    {
+        using (HttpResponseMessage response = await client.PostAsJsonAsync($"/api/QueryService/{action}", msg))
+        {
+            using (HttpContent content = response.Content)
+            {
+                return await ProcessResponse(response, content);
+            }
+        }
+    }
+
+    private async Task<string> ProcessResponse(HttpResponseMessage response, HttpContent content)
+    {
+        string resultString = await content.ReadAsStringAsync();
+        string reasonPhrase = response.ReasonPhrase;
+
+        return resultString;
+    }
+
+    private async void NavigateToEdit(SignalStrategy strategy)
+    {
+        ModuleState.Strategy = strategy;
+        NavigationManager.NavigateTo($"/EditStrategy/{strategy.Id}");
+    }
+
+    private async void Delete(long id)
+    {
+        var client = ClientFactory.CreateClient("BackendService");
+
+        var result = await client.DeleteFromJsonAsync($"/api/CommandService/DeleteStrategyById?id={id}", typeof(BaseResponse)) as BaseResponse;
+        if (result.ResponseCode == "0")
+        {
+            SnackbarMessage($"{result.ResponseDescription}", Severity.Success);
+            strategyList = await GetAllStrategyList();
+            StateHasChanged();
+        }
+        else
+        {
+            SnackbarMessage($"{result.ResponseDescription}", Severity.Error);
+        }
+    }
+
+    void SnackbarMessage(string message, Severity severity)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add(message, severity);
+    }
+
+    private string GetStrategyName(int strategyType)
+    {
+        return ((StrategyTypes)Enum.Parse(typeof(StrategyTypes), strategyType.ToString())).ToString();
+    }
+}

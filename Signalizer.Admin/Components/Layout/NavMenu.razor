@@ -1,0 +1,14 @@
+﻿<MudNavMenu>
+    @*     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink> *@
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="listSignals" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Sensors">List Signals</MudNavLink>
+            <MudNavLink Href="listUsers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SupervisedUserCircle">User Management</MudNavLink>
+            <MudNavLink Href="listStrategies" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.InsertChart">Strategy Management</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+</MudNavMenu>
+
+

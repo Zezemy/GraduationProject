@@ -1,0 +1,185 @@
+﻿@page "/pastSignals"
+@rendermode InteractiveAuto
+@using Microsoft.AspNetCore.SignalR.Client
+@using Signalizer.Entities
+@using Signalizer.Entities.Dtos
+@using Signalizer.Entities.Enums
+@inject ISnackbar Snackbar
+@inject IConfiguration Configuration
+@implements IAsyncDisposable
+@inject IHttpClientFactory ClientFactory
+
+<PageTitle>Past Signals</PageTitle>
+
+<MudPaper Class="d-flex gap-4">
+    <MudSelect @bind-Value="selectedStrategyType" Label="Strategy Type" Placeholder="@(null)" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Clearable="true">
+        @foreach (var strategyType in Enum.GetValues(typeof(StrategyTypes)).Cast<StrategyTypes>())
+        {
+            <MudSelectItem Value="(StrategyTypes?)strategyType">@strategyType</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudAutocomplete T="TradingPair" Label="Trading Pair" @bind-Value="selectedTradingPair" Variant="Variant.Outlined" SearchFunc="@SearchTradingPair"
+                     ResetValueOnEmptyText="@true" ToStringFunc="@((TradingPair obj)=>$"{obj.Base}/{obj.Quote}")"
+                     AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+
+    <MudSelect @bind-Value="selectedInterval" Placeholder="@(null)" Label="Interval" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Clearable="true">
+        @foreach (var interval in Enum.GetValues(typeof(KLineIntervals)).Cast<KLineIntervals>())
+        {
+            <MudSelectItem Value="(KLineIntervals?) interval">@interval</MudSelectItem>
+        }
+    </MudSelect>
+
+</MudPaper>
+<MudPaper Class="d-flex justify-content-around mt-2">
+    <MudStack>
+        <MudDateRangePicker @bind-DateRange="@dateRange" Margin="Margin.Dense" ReadOnly="@false" Clearable="@true"
+                            PlaceholderStart="Query Start Date" PlaceholderEnd="Query End Date" />
+    </MudStack>
+</MudPaper>
+<MudPaper Class="d-flex justify-end mt-1">
+    <MudButton StartIcon="@Icons.Material.Filled.Search" OnClick="DoSearchAsync" Variant="Variant.Filled" Color="Color.Primary">List Signals</MudButton>
+</MudPaper>
+<MudTable Items="signals" Dense=true Filter="new Func<TradingSignal,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Past Signals</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium" Class="mt-0">
+        </MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Symbol</MudTh>
+        <MudTh>Strategy Type</MudTh>
+        <MudTh>Signal Type</MudTh>
+        <MudTh>Interval</MudTh>
+        <MudTh>Date Time</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Symbol">@context.Symbol</MudTd>
+        <MudTd DataLabel="StrategyType">@context.StrategyType</MudTd>
+        <MudTd DataLabel="SignalType" Class="@(context.SignalType==SignalTypes.Buy? "pa-4 mud-theme-success" :(context.SignalType==SignalTypes.Sell? "pa-4 mud-theme-error": "pa-4 mud-background-gray"))">@context.SignalType</MudTd>
+        <MudTd DataLabel="Interval">@context.Interval</MudTd>
+        <MudTd DataLabel="DateTime">@context.DateTime</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private bool success, errors;
+    private string[] errorList = [];
+    private StrategyTypes? selectedStrategyType;
+    private TradingPair selectedTradingPair;
+    private DateTime selectedQueryStartDate;
+    private DateTime selectedQueryEndDate;
+    private DateRange dateRange { get; set; }
+    private KLineIntervals? selectedInterval;
+    private List<TradingPair> tradingPairs;
+    private List<TradingSignal> signals = new List<TradingSignal>();
+    private string? tickerInput;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient("BackendService");
+
+        tradingPairs = await client.GetFromJsonAsync("/api/QueryService/GetTradingPairs", typeof(List<TradingPair>)) as List<TradingPair>;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+    }
+
+    private string searchString1 = "";
+    private TradingSignal selectedItem1 = null;
+    private HashSet<TradingSignal> selectedItems = new HashSet<TradingSignal>();
+    private bool FilterFunc1(TradingSignal signal) => FilterFunc(signal, searchString1);
+
+    private bool FilterFunc(TradingSignal signal, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (signal.Symbol.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (signal.StrategyType.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (signal.SignalType.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (signal.Interval.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private async Task DoSearchAsync()
+    {
+        try
+        {
+            var client = ClientFactory.CreateClient("BackendService");
+            if (dateRange == null)
+            {
+                selectedQueryStartDate = DateTime.Now.AddDays(-1);
+                selectedQueryEndDate = DateTime.Now.AddDays(1);
+            }
+            else
+            {
+                selectedQueryStartDate = dateRange.Start.Value;
+                selectedQueryEndDate = dateRange.End.Value;
+            }
+
+            var msg = new ListSignalRequest()
+                {
+                    Symbol = selectedTradingPair == null ? string.Empty : selectedTradingPair.Base.Trim() + selectedTradingPair.Quote.Trim(),
+                    Interval = selectedInterval== null? -1:(int)selectedInterval,
+                    StrategyType = selectedStrategyType == null ? -1 : (int)selectedStrategyType,
+                    SignalType=-1,
+                    QueryStartDateTime = selectedQueryStartDate,
+                    QueryEndDateTime = selectedQueryEndDate
+                };
+
+            var responseStr = await CallApiPostMethodAsync(client, msg, "ListSignals");
+            var response = Newtonsoft.Json.JsonConvert.DeserializeObject<ListSignalResponseMessage>(responseStr);
+            signals = response.TradingSignals;
+        }
+        catch (Exception ex)
+        {
+            SetErrorAndDisplayMessage(ex.Message);
+        }
+    }
+
+    private async Task<string> CallApiPostMethodAsync(HttpClient client, ListSignalRequest msg, string action)
+    {
+        using (HttpResponseMessage response = await client.PostAsJsonAsync($"/api/QueryService/{action}", msg))
+        {
+            using (HttpContent content = response.Content)
+            {
+                return await ProcessResponse(response, content);
+            }
+        }
+    }
+
+    private async Task<string> ProcessResponse(HttpResponseMessage response, HttpContent content)
+    {
+        string resultString = await content.ReadAsStringAsync();
+        string reasonPhrase = response.ReasonPhrase;
+
+        return resultString;
+    }
+
+    void SetErrorAndDisplayMessage(string message)
+    {
+        errors = true;
+        errorList = [message];
+        SnackbarMessage(message, Severity.Error);
+    }
+
+    void SnackbarMessage(string message, Severity severity)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add(message, severity);
+    }
+
+    private async Task<IEnumerable<TradingPair>> SearchTradingPair(string value, CancellationToken token)
+    {
+        return tradingPairs.Where(x => x.Base.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Quote.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+}

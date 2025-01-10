@@ -1,0 +1,146 @@
+﻿@page "/signals"
+@rendermode InteractiveAuto
+@using Microsoft.AspNetCore.SignalR.Client
+@using Signalizer.Entities
+@using Signalizer.Entities.Dtos
+@using Signalizer.Entities.Enums
+@inject IConfiguration Configuration
+@implements IAsyncDisposable
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory ClientFactory
+
+<PageTitle>Signals</PageTitle>
+
+@if (!IsConnected)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <MudTable Items="signals" Dense=true Filter="new Func<TradingSignal,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Signals</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString1" Placeholder="Search"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Symbol</MudTh>
+            <MudTh>Strategy Type</MudTh>
+            <MudTh>Signal Type</MudTh>
+            <MudTh>Interval</MudTh>
+            <MudTh>Date Time</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Symbol">@context.Symbol</MudTd>
+            <MudTd DataLabel="StrategyType">@context.StrategyType</MudTd>
+            <MudTd DataLabel="SignalType" Class="@(context.SignalType==SignalTypes.Buy? "pa-4 mud-theme-success" :(context.SignalType==SignalTypes.Sell? "pa-4 mud-theme-error": "pa-4 mud-background-gray"))">@context.SignalType</MudTd>
+            <MudTd DataLabel="Interval">@context.Interval</MudTd>
+            <MudTd DataLabel="DateTime">@context.DateTime</MudTd>
+            <MudTd>
+                <MudIconButton @onclick="@(()=> Unsubscribe(@context.Symbol, @context.StrategyType, @context.Interval, tradingSignalSenderHubConnection))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private HubConnection? tradingSignalSenderHubConnection;
+    private List<TradingSignal> signals = new List<TradingSignal>();
+    private string? tickerInput;
+
+    private List<SignalStrategy> strategies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient("BackendService");
+
+        var strategiesResponse = await client.GetFromJsonAsync("/api/QueryService/GetUserStrategiesWithPredefined", typeof(ListStrategyResponseMessage)) as ListStrategyResponseMessage;
+        strategies = strategiesResponse.SignalStrategies;
+        signals = await client.GetFromJsonAsync("/api/QueryService/GetLastSignalsForUser", typeof(List<TradingSignal>)) as List<TradingSignal>;
+
+        tradingSignalSenderHubConnection = new HubConnectionBuilder()
+        .WithUrl(Configuration["BackendUrl"] + "/trading-signal-sender-hub")
+        .Build();
+        await SetHubConnection(tradingSignalSenderHubConnection, signals);
+
+        foreach (var strategy in strategies)
+        {
+            var symbol = strategy.TradingPair.Base + strategy.TradingPair.Quote;
+            var strategyType = (StrategyTypes)Enum.Parse(typeof(StrategyTypes), strategy.StrategyType.ToString());
+            var interval = (KLineIntervals)Enum.Parse(typeof(KLineIntervals), strategy.Interval.ToString());
+
+            Subscribe(symbol, strategyType, interval, tradingSignalSenderHubConnection);
+        }
+    }
+
+    private async Task Subscribe(string? ticker, StrategyTypes strategyType, KLineIntervals interval, HubConnection hubConnection)
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("Subscribe", ticker, strategyType,interval);
+        }
+    }
+
+
+    public bool IsConnected =>
+        tradingSignalSenderHubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (tradingSignalSenderHubConnection is not null)
+        {
+            await tradingSignalSenderHubConnection.DisposeAsync();
+        }
+    }
+
+    protected async Task SetHubConnection(HubConnection hubConnection, List<TradingSignal> signals)
+    {
+        hubConnection.On<TradingSignal>("ReceiveSignalUpdate", (signal) =>
+        {
+            if (!signals.Any(x => x.Symbol == signal.Symbol && x.StrategyType == signal.StrategyType && x.Interval == signal.Interval))
+            {
+                signals.Add(signal);
+            }
+            else
+            {
+                var signalInList = signals.Where(x => x.Symbol == signal.Symbol && x.StrategyType == signal.StrategyType && x.Interval == signal.Interval).First();
+                var index = signals.IndexOf(signalInList);
+                signals[index] = signal;
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private string searchString1 = "";
+    private TradingSignal selectedItem1 = null;
+    private HashSet<TradingSignal> selectedItems = new HashSet<TradingSignal>();
+    private bool FilterFunc1(TradingSignal signal) => FilterFunc(signal, searchString1);
+
+    private bool FilterFunc(TradingSignal signal, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (signal.Symbol.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (signal.SignalType.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (signal.Interval.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private async void Unsubscribe(string? ticker, StrategyTypes strategyType, KLineIntervals interval, HubConnection hubConnection)
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("Unsubscribe", ticker, strategyType, interval);
+        }
+        var strategy = strategies.Where(x => x.TradingPair.Base + x.TradingPair.Quote == ticker && x.StrategyType == (int)strategyType && x.Interval == (int)interval).FirstOrDefault();
+        strategies.Remove(strategy);
+        signals.Remove(signals.Where(x => x.Symbol == ticker && x.StrategyType == strategyType && x.Interval == interval).First());
+    }
+}

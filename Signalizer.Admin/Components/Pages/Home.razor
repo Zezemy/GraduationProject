@@ -1,0 +1,14 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+<PageTitle></PageTitle>
+<MudContainer Class="d-flex">
+    <MudText Class="ma-auto" Typo="Typo.h4"></MudText>
+</MudContainer>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+}
