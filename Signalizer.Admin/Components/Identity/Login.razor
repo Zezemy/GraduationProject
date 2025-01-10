@@ -4,23 +4,23 @@
 @using Signalizer.Entities.Models
 @inject NavigationManager Navigation
 @inject IAccountManagement Acct
+@inject ISnackbar Snackbar
 
 <PageTitle>Login</PageTitle>
 <MudContainer Class="d-flex justify-center">
     <AuthorizeView Context="authContext">
         <Authorized>
-            <div class="alert alert-success">You're logged in as @authContext.User.Identity?.Name.</div>
+            <MudContainer Class="d-flex flex-column align-self-center" Style=" width: 20vw;">
+                <MudItem>
+                    <div class="alert alert-success">You're logged in as @authContext.User.Identity?.Name.</div>
+                </MudItem>
+                <MudItem Class="d-flex justify-space-between">
+                    <MudIconButton Icon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Href="logout"></MudIconButton>
+                </MudItem>
+            </MudContainer>
         </Authorized>
         <NotAuthorized>
-            @{
-                if (errors)
-                {
-                    foreach (var error in errorList)
-                    {
-                        <div class="alert alert-danger">@error</div>
-                    }
-                }
-            }
             <EditForm EditContext="@editContext">
                 <MudCard Style="max-width:500px;">
                     <MudCardContent Class="d-flex flex-column align-items-center" Style=" padding:50px;">
@@ -53,7 +53,7 @@
 
     protected override void OnInitialized()
     {
-        _model ??= new();        
+        _model ??= new();
         editContext = new(_model);
     }
 
@@ -80,16 +80,14 @@
         errorList = [];
         if (string.IsNullOrWhiteSpace(email))
         {
-            errors = true;
-            errorList = ["Email is required."];
+            SetErrorAndDisplayMessage("Email is required.");
             return;
 
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            errors = true;
-            errorList = ["Password is required."];
+            SetErrorAndDisplayMessage("Password is required.");
             return;
         }
 
@@ -106,7 +104,22 @@
         {
             errors = true;
             errorList = result.ErrorList;
+            var message = errorList[0];
+            SnackbarMessage(message);
         }
+    }
 
+    void SnackbarMessage(string message)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add(message, Severity.Error);
+    }
+
+    void SetErrorAndDisplayMessage(string message)
+    {
+        errors = true;
+        errorList = [message];
+        SnackbarMessage(message);
     }
 }

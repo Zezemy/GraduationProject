@@ -8,6 +8,7 @@ namespace Signalizer.BackgroundServices
 {
     internal sealed class TradingSignaller(
         IServiceScopeFactory serviceScopeFactory,
+        IHubContext<TradingSignalSenderHub, ISignallerClientContract> hubContext,
         ILogger<TradingSignaller> logger)
         : BackgroundService
     {

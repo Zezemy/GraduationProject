@@ -203,9 +203,15 @@
 
     private async Task Subscribe(string? ticker)
     {
-        if (hubConnection is not null)
+        try
         {
-            await hubConnection.SendAsync("Subscribe", ticker);
+            if (hubConnection is not null)
+            {
+                await hubConnection.SendAsync("Subscribe", ticker);
+            }
+        }
+        catch (Exception)
+        {
         }
     }
 

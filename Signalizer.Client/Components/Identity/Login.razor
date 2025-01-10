@@ -4,35 +4,27 @@
 @using Signalizer.Entities.Models
 @inject NavigationManager Navigation
 @inject IAccountManagement Acct
+@inject ISnackbar Snackbar
 
 <PageTitle>Login</PageTitle>
-<MudContainer Class="d-flex justify-center" >
+<MudContainer Class="d-flex justify-center">
     <AuthorizeView Context="authContext">
         <Authorized>
             <div class="alert alert-success">You're logged in as @authContext.User.Identity?.Name.</div>
         </Authorized>
         <NotAuthorized>
-            @{
-                if (errors)
-                {
-                    foreach (var error in errorList)
-                    {
-                        <div class="alert alert-danger">@error</div>
-                    }
-                }
-            }
             <EditForm EditContext="@editContext">
                 <MudCard Style="max-width:500px;">
                     <MudCardContent Class="d-flex flex-column align-items-center" Style=" padding:50px;">
                         <MudAvatar Style="width: 64px; height: 64px; margin-bottom: 1rem;" class="align-self-center" Color="Color.Default" Variant="Variant.Filled">
-                            <MudIcon Color="Color.Dark" Style="width: 64px; height: 64px;" class="align-self-center"  Icon=@Icons.Material.Filled.Person Size="Size.Large" />
+                            <MudIcon Color="Color.Dark" Style="width: 64px; height: 64px;" class="align-self-center" Icon=@Icons.Material.Filled.Person Size="Size.Large" />
                         </MudAvatar>
                         <MudTextField InputType="InputType.Email" @bind-Value="email" Label="Email address" style="min-width:25vw" Variant="Variant.Outlined" class="align-self-center"></MudTextField>
                         <MudTextField @bind-Value="password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" style="min-width:25vw" class="align-self-center"
                                       Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
                     </MudCardContent>
                     <MudCardActions class="align-self-center mb-5">
-                        <MudButton  OnClick="DoLoginAsync" Variant="Variant.Filled" Color="Color.Primary">Sign In</MudButton>
+                        <MudButton OnClick="DoLoginAsync" Variant="Variant.Filled" Color="Color.Primary">Sign In</MudButton>
                     </MudCardActions>
                 </MudCard>
             </EditForm>
@@ -80,16 +72,14 @@
         errorList = [];
         if (string.IsNullOrWhiteSpace(email))
         {
-            errors = true;
-            errorList = ["Email is required."];
+            SetErrorAndDisplayMessage("Email is required.");
             return;
 
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            errors = true;
-            errorList = ["Password is required."];
+            SetErrorAndDisplayMessage("Password is required.");
             return;
         }
 
@@ -99,6 +89,7 @@
         {
             success = true;
             email = password = string.Empty;
+            Snackbar.Clear();
             Navigation.NavigateTo("/");
         }
 
@@ -106,7 +97,22 @@
         {
             errors = true;
             errorList = result.ErrorList;
+            var message = errorList[0];
+            SnackbarMessage(message);
         }
+    }
 
+    void SnackbarMessage(string message)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add(message, Severity.Error);
+    }
+
+    void SetErrorAndDisplayMessage(string message)
+    {
+        errors = true;
+        errorList = [message];
+        SnackbarMessage(message);
     }
 }
