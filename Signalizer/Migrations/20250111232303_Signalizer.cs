@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Signalizer.Migrations
 {
     /// <inheritdoc />
-    public partial class SignalizerMigration : Migration
+    public partial class Signalizer : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -51,6 +51,34 @@ namespace Signalizer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SignalTypes",
+                columns: table => new
+                {
+                    Key = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Value = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__SignalTy__3214EC074D7E9AF8", x => x.Key);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StrategyTypes",
+                columns: table => new
+                {
+                    Key = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Value = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__Strategy__3214EC07F17CAFBA", x => x.Key);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TradingPairs",
                 columns: table => new
                 {
@@ -62,24 +90,6 @@ namespace Signalizer.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__TradingP__3214EC076E5471E1", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TradingSignals",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    StrategyId = table.Column<long>(type: "bigint", nullable: false),
-                    Symbol = table.Column<string>(type: "varchar(40)", unicode: false, maxLength: 40, nullable: false),
-                    SignalType = table.Column<int>(type: "int", nullable: false),
-                    DateTime = table.Column<DateTime>(type: "datetime", nullable: false),
-                    StrategyType = table.Column<int>(type: "int", nullable: false),
-                    Interval = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__TradingS__3214EC07AFAF5B7E", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -200,7 +210,7 @@ namespace Signalizer.Migrations
                     CreateDate = table.Column<DateTime>(type: "datetime", nullable: false),
                     UpdatedBy = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true),
                     UpdateDate = table.Column<DateTime>(type: "datetime", nullable: true),
-                    Properties = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Properties = table.Column<string>(type: "varchar(8000)", unicode: false, maxLength: 8000, nullable: true),
                     IsPredefined = table.Column<bool>(type: "bit", nullable: false),
                     TradingPairId = table.Column<long>(type: "bigint", nullable: false)
                 },
@@ -208,9 +218,66 @@ namespace Signalizer.Migrations
                 {
                     table.PrimaryKey("PK__SignalSt__3214EC0711B64996", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_SignalStrategies_StrategyTypes",
+                        column: x => x.StrategyType,
+                        principalTable: "StrategyTypes",
+                        principalColumn: "Key");
+                    table.ForeignKey(
                         name: "FK_SignalStrategies_TradingPairs",
                         column: x => x.TradingPairId,
                         principalTable: "TradingPairs",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TradingSignals",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StrategyId = table.Column<long>(type: "bigint", nullable: false),
+                    Symbol = table.Column<string>(type: "varchar(40)", unicode: false, maxLength: 40, nullable: false),
+                    SignalType = table.Column<int>(type: "int", nullable: false),
+                    DateTime = table.Column<DateTime>(type: "datetime", nullable: false),
+                    StrategyType = table.Column<int>(type: "int", nullable: false),
+                    Interval = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__TradingS__3214EC07AFAF5B7E", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TradingSignals_SignalStrategies",
+                        column: x => x.StrategyId,
+                        principalTable: "SignalStrategies",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_TradingSignals_SignalTypes",
+                        column: x => x.SignalType,
+                        principalTable: "SignalTypes",
+                        principalColumn: "Key");
+                    table.ForeignKey(
+                        name: "FK_TradingSignals_StrategyTypes",
+                        column: x => x.StrategyType,
+                        principalTable: "StrategyTypes",
+                        principalColumn: "Key");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserSignalStrategies",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    StrategyId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__UserSign__3214EC07929FD2F1", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserSignalStrategies_SignalStrategies",
+                        column: x => x.StrategyId,
+                        principalTable: "SignalStrategies",
                         principalColumn: "Id");
                 });
 
@@ -232,25 +299,6 @@ namespace Signalizer.Migrations
                         principalTable: "TradingSignals",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserSignalStrategies",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    StrategyId = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__UserSign__3214EC07929FD2F1", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserSignalStrategies_SignalStrategies",
-                        column: x => x.StrategyId,
-                        principalTable: "SignalStrategies",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -293,9 +341,29 @@ namespace Signalizer.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SignalStrategies_StrategyType",
+                table: "SignalStrategies",
+                column: "StrategyType");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SignalStrategies_TradingPairId",
                 table: "SignalStrategies",
                 column: "TradingPairId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TradingSignals_SignalType",
+                table: "TradingSignals",
+                column: "SignalType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TradingSignals_StrategyId",
+                table: "TradingSignals",
+                column: "StrategyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TradingSignals_StrategyType",
+                table: "TradingSignals",
+                column: "StrategyType");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserSignalStrategies_StrategyId",
@@ -339,10 +407,16 @@ namespace Signalizer.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
+                name: "TradingSignals");
+
+            migrationBuilder.DropTable(
                 name: "SignalStrategies");
 
             migrationBuilder.DropTable(
-                name: "TradingSignals");
+                name: "SignalTypes");
+
+            migrationBuilder.DropTable(
+                name: "StrategyTypes");
 
             migrationBuilder.DropTable(
                 name: "TradingPairs");

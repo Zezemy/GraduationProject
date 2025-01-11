@@ -40,7 +40,7 @@
 <MudPaper Class="d-flex justify-end mt-1">
     <MudButton StartIcon="@Icons.Material.Filled.Search" OnClick="DoSearchAsync" Variant="Variant.Filled" Color="Color.Primary">List Signals</MudButton>
 </MudPaper>
-<MudTable Items="signals" Dense=true Filter="new Func<TradingSignal,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+<MudTable @ref="@_table" Items="signals" Dense=true Filter="new Func<TradingSignal,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Past Signals</MudText>
         <MudSpacer />
@@ -63,6 +63,9 @@
         <MudTd DataLabel="Interval">@context.Interval</MudTd>
         <MudTd DataLabel="DateTime">@context.DateTime</MudTd>
     </RowTemplate>
+    <PagerContent>
+        <MudPagination SelectedChanged="PageChanged" Variant="Variant.Filled" Count="@((_table.GetFilteredItemsCount() + _table.RowsPerPage - 1) / _table.RowsPerPage)" Class=@(!signals.Any()? "d-none" : "d-flex justify-end mt-4") />
+    </PagerContent>
 </MudTable>
 
 @code {
@@ -76,6 +79,7 @@
     private KLineIntervals? selectedInterval;
     private List<TradingPair> tradingPairs;
     private List<TradingSignal> signals = new List<TradingSignal>();
+    private MudTable<TradingSignal> _table;
     private string? tickerInput;
 
     protected override async Task OnInitializedAsync()
@@ -128,9 +132,9 @@
             var msg = new ListSignalRequest()
                 {
                     Symbol = selectedTradingPair == null ? string.Empty : selectedTradingPair.Base.Trim() + selectedTradingPair.Quote.Trim(),
-                    Interval = selectedInterval== null? -1:(int)selectedInterval,
+                    Interval = selectedInterval == null ? -1 : (int)selectedInterval,
                     StrategyType = selectedStrategyType == null ? -1 : (int)selectedStrategyType,
-                    SignalType=-1,
+                    SignalType = -1,
                     QueryStartDateTime = selectedQueryStartDate,
                     QueryEndDateTime = selectedQueryEndDate
                 };
@@ -181,5 +185,10 @@
     private async Task<IEnumerable<TradingPair>> SearchTradingPair(string value, CancellationToken token)
     {
         return tradingPairs.Where(x => x.Base.Contains(value, StringComparison.InvariantCultureIgnoreCase) || x.Quote.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private void PageChanged(int i)
+    {
+        _table.NavigateTo(i - 1);
     }
 }

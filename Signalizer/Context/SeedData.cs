@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Signalizer.Models;
 using Signalizer.Entities.Strategies.Options;
+using Signalizer.Entities.Enums;
 
 namespace Signalizer.Context
 {
@@ -151,6 +152,9 @@ namespace Signalizer.Context
                 return;
             }
 
+            InsertSignalTypes(context);
+            InsertStrategyTypes(context);
+
             var userStore = new UserStore<User>(context);
             var password = new PasswordHasher<User>();
 
@@ -197,16 +201,36 @@ namespace Signalizer.Context
                 await context.SaveChangesAsync();
             }
 
-            var user2 = await userManager.FindByEmailAsync("zy@Signalizer.com");
+            //var user2 = await userManager.FindByEmailAsync("zy@Signalizer.com");
 
-            Random random = new Random(tradingPairs.Count());
-            var index = random.Next();
+            //Random random = new Random(tradingPairs.Count());
+            //var index = random.Next();
 
-            foreach (var strategy in signalStrategies)
-            {
-                context.UserSignalStrategies.Add(new UserSignalStrategy { StrategyId = strategy.Id, UserId = user2.Id });
-            }
+            //foreach (var strategy in signalStrategies)
+            //{
+            //    context.UserSignalStrategies.Add(new UserSignalStrategy { StrategyId = strategy.Id, UserId = user2.Id });
+            //}
             await context.SaveChangesAsync();
+        }
+
+        public static void InsertSignalTypes(ApplicationDbContext context)
+        {
+            var values = Enum.GetValues(typeof(SignalTypes));
+            foreach (var value in values)
+            {
+                context.SignalTypes.Add(new SignalType() { Key = (int)value, Value = value.ToString() });
+            }
+            context.SaveChanges();
+        }
+
+        public static void InsertStrategyTypes(ApplicationDbContext context)
+        {
+            var values = Enum.GetValues(typeof(StrategyTypes));
+            foreach (var value in values)
+            {
+                context.StrategyTypes.Add(new StrategyType() { Key = (int)value, Value = value.ToString() });
+            }
+            context.SaveChanges();
         }
 
         private class SeedUser : User

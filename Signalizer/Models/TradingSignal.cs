@@ -17,7 +17,11 @@ public partial class TradingSignal
     public int StrategyType { get; set; }
 
     public int Interval { get; set; }
+
+    public virtual SignalType SignalTypeNavigation { get; set; }
     public virtual SignalStrategy Strategy { get; set; }
+
+    public virtual StrategyType StrategyTypeNavigation { get; set; }
 
     public virtual ICollection<UserTradingSignal> UserTradingSignals { get; set; } = new List<UserTradingSignal>();
 }

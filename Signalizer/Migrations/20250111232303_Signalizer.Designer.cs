@@ -12,8 +12,8 @@ using Signalizer.Context;
 namespace Signalizer.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241223184024_Signalizer-Migration")]
-    partial class SignalizerMigration
+    [Migration("20250111232303_Signalizer")]
+    partial class Signalizer
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -247,7 +247,9 @@ namespace Signalizer.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Properties")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(8000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8000)");
 
                     b.Property<int>("StrategyType")
                         .HasColumnType("int");
@@ -266,9 +268,57 @@ namespace Signalizer.Migrations
                     b.HasKey("Id")
                         .HasName("PK__SignalSt__3214EC0711B64996");
 
+                    b.HasIndex("StrategyType");
+
                     b.HasIndex("TradingPairId");
 
                     b.ToTable("SignalStrategies");
+                });
+
+            modelBuilder.Entity("Signalizer.Models.SignalType", b =>
+                {
+                    b.Property<int>("Key")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Key")
+                        .HasName("PK__SignalTy__3214EC074D7E9AF8");
+
+                    b.ToTable("SignalTypes");
+                });
+
+            modelBuilder.Entity("Signalizer.Models.StrategyType", b =>
+                {
+                    b.Property<int>("Key")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Key")
+                        .HasName("PK__Strategy__3214EC07F17CAFBA");
+
+                    b.ToTable("StrategyTypes");
                 });
 
             modelBuilder.Entity("Signalizer.Models.TradingPair", b =>
@@ -328,6 +378,12 @@ namespace Signalizer.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK__TradingS__3214EC07AFAF5B7E");
+
+                    b.HasIndex("SignalType");
+
+                    b.HasIndex("StrategyId");
+
+                    b.HasIndex("StrategyType");
 
                     b.ToTable("TradingSignals");
                 });
@@ -433,13 +489,48 @@ namespace Signalizer.Migrations
 
             modelBuilder.Entity("Signalizer.Models.SignalStrategy", b =>
                 {
+                    b.HasOne("Signalizer.Models.StrategyType", "StrategyTypeNavigation")
+                        .WithMany("SignalStrategies")
+                        .HasForeignKey("StrategyType")
+                        .IsRequired()
+                        .HasConstraintName("FK_SignalStrategies_StrategyTypes");
+
                     b.HasOne("Signalizer.Models.TradingPair", "TradingPair")
                         .WithMany("SignalStrategies")
                         .HasForeignKey("TradingPairId")
                         .IsRequired()
                         .HasConstraintName("FK_SignalStrategies_TradingPairs");
 
+                    b.Navigation("StrategyTypeNavigation");
+
                     b.Navigation("TradingPair");
+                });
+
+            modelBuilder.Entity("Signalizer.Models.TradingSignal", b =>
+                {
+                    b.HasOne("Signalizer.Models.SignalType", "SignalTypeNavigation")
+                        .WithMany("TradingSignals")
+                        .HasForeignKey("SignalType")
+                        .IsRequired()
+                        .HasConstraintName("FK_TradingSignals_SignalTypes");
+
+                    b.HasOne("Signalizer.Models.SignalStrategy", "Strategy")
+                        .WithMany("TradingSignals")
+                        .HasForeignKey("StrategyId")
+                        .IsRequired()
+                        .HasConstraintName("FK_TradingSignals_SignalStrategies");
+
+                    b.HasOne("Signalizer.Models.StrategyType", "StrategyTypeNavigation")
+                        .WithMany("TradingSignals")
+                        .HasForeignKey("StrategyType")
+                        .IsRequired()
+                        .HasConstraintName("FK_TradingSignals_StrategyTypes");
+
+                    b.Navigation("SignalTypeNavigation");
+
+                    b.Navigation("Strategy");
+
+                    b.Navigation("StrategyTypeNavigation");
                 });
 
             modelBuilder.Entity("Signalizer.Models.UserSignalStrategy", b =>
@@ -467,7 +558,21 @@ namespace Signalizer.Migrations
 
             modelBuilder.Entity("Signalizer.Models.SignalStrategy", b =>
                 {
+                    b.Navigation("TradingSignals");
+
                     b.Navigation("UserSignalStrategies");
+                });
+
+            modelBuilder.Entity("Signalizer.Models.SignalType", b =>
+                {
+                    b.Navigation("TradingSignals");
+                });
+
+            modelBuilder.Entity("Signalizer.Models.StrategyType", b =>
+                {
+                    b.Navigation("SignalStrategies");
+
+                    b.Navigation("TradingSignals");
                 });
 
             modelBuilder.Entity("Signalizer.Models.TradingPair", b =>
