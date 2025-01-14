@@ -14,6 +14,7 @@ using System.Security.Claims;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Signalizer.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Signalizer.Context
+namespace Signalizer.Models
 {
     public class User : IdentityUser
     {

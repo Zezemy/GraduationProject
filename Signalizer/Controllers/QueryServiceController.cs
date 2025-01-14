@@ -5,13 +5,7 @@ using Signalizer.Entities.Enums;
 using Signalizer.Entities;
 using Microsoft.EntityFrameworkCore;
 using Signalizer.Extensions;
-using Binance.Net.Enums;
-using CryptoExchange.Net.CommonObjects;
-using CryptoExchange.Net.Interfaces;
-using Microsoft.Identity.Client;
 using Binance.Net.Interfaces.Clients;
-using System.Text;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Signalizer.Controllers
 {
