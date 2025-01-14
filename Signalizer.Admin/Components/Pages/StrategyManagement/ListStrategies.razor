@@ -104,7 +104,7 @@
     {
         var client = ClientFactory.CreateClient("BackendService");
 
-        var result = await client.DeleteFromJsonAsync($"/api/CommandService/DeleteStrategyById?id={id}", typeof(BaseResponse)) as BaseResponse;
+        var result = await client.DeleteFromJsonAsync<BaseResponse>($"/api/CommandService/DeleteStrategyById?id={id}");
         if (result.ResponseCode == "0")
         {
             SnackbarMessage($"{result.ResponseDescription}", Severity.Success);

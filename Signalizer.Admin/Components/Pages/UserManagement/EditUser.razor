@@ -70,7 +70,7 @@
     {
         var client = ClientFactory.CreateClient("BackendService");
 
-        return await client.GetFromJsonAsync($"/api/QueryService/GetUserById?id={Id}", typeof(UserModel)) as UserModel;
+        return await client.GetFromJsonAsync<UserModel>($"/api/QueryService/GetUserById?id={Id}");
     }
 
     private async void Save()

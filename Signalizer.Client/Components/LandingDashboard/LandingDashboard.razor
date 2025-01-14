@@ -189,11 +189,11 @@
 
 
         var client = ClientFactory.CreateClient("BackendService");
-        topVolumeCoins = await client.GetFromJsonAsync("/api/QueryService/GetVolumeRankings", typeof(List<TradingDayTicker>)) as List<TradingDayTicker>;
-        topGainerCoins = await client.GetFromJsonAsync("/api/QueryService/GetGainersRankings", typeof(List<TradingDayTicker>)) as List<TradingDayTicker>;
-        topLoserCoins = await client.GetFromJsonAsync("/api/QueryService/GetLosersRankings", typeof(List<TradingDayTicker>)) as List<TradingDayTicker>;
-        tradingPairList = await client.GetFromJsonAsync("/api/QueryService/GetTradingPairs", typeof(List<TradingPair>)) as List<TradingPair>;
-        defaultTickers = await client.GetFromJsonAsync("/api/QueryService/GetPredefinedStrategiesSymbols", typeof(List<string>)) as List<string>;
+        topVolumeCoins = await client.GetFromJsonAsync<List<TradingDayTicker>>("/api/QueryService/GetVolumeRankings");
+        topGainerCoins = await client.GetFromJsonAsync<List<TradingDayTicker>>("/api/QueryService/GetGainersRankings");
+        topLoserCoins = await client.GetFromJsonAsync<List<TradingDayTicker>>("/api/QueryService/GetLosersRankings");
+        tradingPairList = await client.GetFromJsonAsync<List<TradingPair>>("/api/QueryService/GetTradingPairs");
+        defaultTickers = await client.GetFromJsonAsync<List<string>>("/api/QueryService/GetPredefinedStrategiesSymbols");
 
         foreach (var ticker in defaultTickers)
         {

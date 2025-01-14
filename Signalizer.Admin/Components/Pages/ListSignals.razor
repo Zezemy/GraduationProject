@@ -86,7 +86,7 @@
     {
         var client = ClientFactory.CreateClient("BackendService");
 
-        tradingPairs = await client.GetFromJsonAsync("/api/QueryService/GetTradingPairs", typeof(List<TradingPair>)) as List<TradingPair>;
+        tradingPairs = await client.GetFromJsonAsync<List<TradingPair>>("/api/QueryService/GetTradingPairs");
     }
 
     public async ValueTask DisposeAsync()

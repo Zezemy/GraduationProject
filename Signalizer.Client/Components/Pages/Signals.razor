@@ -56,9 +56,9 @@ else
     {
         var client = ClientFactory.CreateClient("BackendService");
 
-        var strategiesResponse = await client.GetFromJsonAsync("/api/QueryService/GetUserStrategiesWithPredefined", typeof(ListStrategyResponseMessage)) as ListStrategyResponseMessage;
+        var strategiesResponse = await client.GetFromJsonAsync<ListStrategyResponseMessage>("/api/QueryService/GetUserStrategiesWithPredefined");
         strategies = strategiesResponse.SignalStrategies;
-        signals = await client.GetFromJsonAsync("/api/QueryService/GetLastSignalsForUser", typeof(List<TradingSignal>)) as List<TradingSignal>;
+        signals = await client.GetFromJsonAsync<List<TradingSignal>>("/api/QueryService/GetLastSignalsForUser");
 
         tradingSignalSenderHubConnection = new HubConnectionBuilder()
         .WithUrl(Configuration["BackendUrl"] + "/trading-signal-sender-hub")

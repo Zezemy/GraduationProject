@@ -52,14 +52,14 @@
     {
         var client = ClientFactory.CreateClient("BackendService");
 
-        return await client.GetFromJsonAsync("/api/QueryService/GetUsers", typeof(List<UserModel>)) as List<UserModel>;
+        return await client.GetFromJsonAsync<List<UserModel>>("/api/QueryService/GetUsers");
     }
 
     private async void Delete(string id)
     {
         var client = ClientFactory.CreateClient("BackendService");
 
-        var result = await client.DeleteFromJsonAsync($"/api/CommandService/DeleteUserById?id={id}", typeof(BaseResponse)) as BaseResponse;
+        var result = await client.DeleteFromJsonAsync<BaseResponse>($"/api/CommandService/DeleteUserById?id={id}");
         if (result.ResponseCode == "0")
         {
             SnackbarMessage($"{ result.ResponseDescription}", Severity.Success);
