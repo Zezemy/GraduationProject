@@ -214,7 +214,7 @@ public class CookieAuthenticationStateProvider(IHttpClientFactory httpClientFact
                     }
                 }
 
-                if (!roles.Any(x => x.Value == "User"))
+                if (!roles.Any(x => x.Value == "User") && roles.Count() > 0)
                 {
                     authenticated = false;
                 }
