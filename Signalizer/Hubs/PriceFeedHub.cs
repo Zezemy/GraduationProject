@@ -4,7 +4,7 @@ using Signalizer.Entities.Interfaces;
 
 namespace Signalizer.Hubs
 {
-    internal sealed class StocksFeedHub(ActiveTickerManager activeTickerManager) : Hub<IPriceUpdateClientContract>
+    internal sealed class PriceFeedHub(ActiveTickerManager activeTickerManager) : Hub<IPriceUpdateClientContract>
     {
         public async Task Subscribe(string ticker)
         {

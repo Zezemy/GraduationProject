@@ -11,12 +11,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Signalizer.BackgroundServices
 {
-    internal sealed class StocksFeedUpdater(
+    internal sealed class PriceFeedUpdater(
         ActiveTickerManager activeTickerManager,
         IServiceScopeFactory serviceScopeFactory,
-        IHubContext<StocksFeedHub, IPriceUpdateClientContract> hubContext,
+        IHubContext<PriceFeedHub, IPriceUpdateClientContract> hubContext,
         IOptions<UpdateOptions> options,
-        ILogger<StocksFeedUpdater> logger,
+        ILogger<PriceFeedUpdater> logger,
         IBinanceRestClient restClient)
         : BackgroundService
     {
@@ -64,7 +64,7 @@ namespace Signalizer.BackgroundServices
             }
         }
 
-        private static async Task SendTradingPairPrice(IServiceScopeFactory serviceScopeFactory, IHubContext<StocksFeedHub, IPriceUpdateClientContract> hubContext, ILogger<StocksFeedUpdater> logger, IBinanceRestClient restClient, List<Models.TradingPair> tradingPairs, string ticker)
+        private static async Task SendTradingPairPrice(IServiceScopeFactory serviceScopeFactory, IHubContext<PriceFeedHub, IPriceUpdateClientContract> hubContext, ILogger<PriceFeedUpdater> logger, IBinanceRestClient restClient, List<Models.TradingPair> tradingPairs, string ticker)
         {
             try
             {
@@ -109,7 +109,7 @@ namespace Signalizer.BackgroundServices
             }
         }
 
-        private static async Task SendTradingPairVolume(IServiceScopeFactory serviceScopeFactory, IHubContext<StocksFeedHub, IPriceUpdateClientContract> hubContext, ILogger<StocksFeedUpdater> logger, IBinanceRestClient restClient)
+        private static async Task SendTradingPairVolume(IServiceScopeFactory serviceScopeFactory, IHubContext<PriceFeedHub, IPriceUpdateClientContract> hubContext, ILogger<PriceFeedUpdater> logger, IBinanceRestClient restClient)
         {
             try
             {

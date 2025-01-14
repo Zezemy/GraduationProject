@@ -49,7 +49,7 @@ builder.Services.AddResponseCompression(opts =>
 builder.Services.AddBinance();
 
 builder.Services.AddSingleton<ActiveTickerManager>();
-builder.Services.AddHostedService<StocksFeedUpdater>();
+builder.Services.AddHostedService<PriceFeedUpdater>();
 
 builder.Services.AddHostedService<MaCrossoverSignaller>();
 builder.Services.AddHostedService<RsiSignaller>();
@@ -129,7 +129,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<StocksFeedHub>("/pricehub");
+app.MapHub<PriceFeedHub>("/pricehub");
 app.MapHub<TradingSignalSenderHub>("/trading-signal-sender-hub");
 
 app.MapIdentityApi<User>();

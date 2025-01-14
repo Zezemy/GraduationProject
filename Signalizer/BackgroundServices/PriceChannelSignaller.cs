@@ -31,13 +31,13 @@ namespace Signalizer.BackgroundServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await SendSignal();
+                await GenerateSignal();
 
                 await Task.Delay(_options.WorkInterval, stoppingToken);
             }
         }
 
-        private async Task SendSignal()
+        private async Task GenerateSignal()
         {
             using var scope = serviceScopeFactory.CreateScope();
             using var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
