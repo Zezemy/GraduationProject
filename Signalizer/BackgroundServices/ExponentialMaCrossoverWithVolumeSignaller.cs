@@ -42,9 +42,9 @@ namespace Signalizer.BackgroundServices
                 try
                 {
                     var props = Newtonsoft.Json.JsonConvert.DeserializeObject<ExponentialMaCrossoverWithVolumeStrategyOptions>(strategy.Properties);
-                    var ticker = strategy.TradingPair.Base + strategy.TradingPair.Quote;
+                    var symbol = strategy.TradingPair.Base + strategy.TradingPair.Quote;
                     var kLineInterval = (Binance.Net.Enums.KlineInterval)Enum.Parse(typeof(Binance.Net.Enums.KlineInterval), props.KLineInterval.ToString());
-                    var kLines = await restClient.SpotApi.ExchangeData.GetKlinesAsync(ticker, kLineInterval, limit: props.LongPeriod);
+                    var kLines = await restClient.SpotApi.ExchangeData.GetKlinesAsync(symbol, kLineInterval, limit: props.LongPeriod);
                     var closePricesLongList = kLines.Data.TakeLast(props.LongPeriod).Select(x => x.ConvertToKLine());
                     var latestCloseTime = kLines.Data.TakeLast(1).Select(x => x.CloseTime.ToLocalTime()).FirstOrDefault();
                     //DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(latestCloseTime);
@@ -52,7 +52,7 @@ namespace Signalizer.BackgroundServices
 
                     Models.TradingSignal dbSignal = new Models.TradingSignal();
                     dbSignal.SignalType = (int)EMAVolumeSignal(closePricesLongList, props.ShortPeriod, props.LongPeriod);
-                    dbSignal.Symbol = ticker;
+                    dbSignal.Symbol = symbol;
                     dbSignal.DateTime = latestCloseTime;
                     dbSignal.StrategyId = strategy.Id;
                     dbSignal.StrategyType = (int)StrategyTypes.ExponentialMaCrossoverWithVolume;
@@ -71,7 +71,7 @@ namespace Signalizer.BackgroundServices
                         await context.SaveChangesAsync();
                     }
 
-                    logger.LogInformation($"Saved {ticker} signal to {dbSignal}");
+                    logger.LogInformation($"Saved {symbol} signal to {dbSignal}");
                 }
                 catch (Exception e)
                 {
