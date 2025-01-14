@@ -6,6 +6,7 @@ using Signalizer.Entities;
 using Microsoft.EntityFrameworkCore;
 using Signalizer.Extensions;
 using Binance.Net.Interfaces.Clients;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Signalizer.Controllers
 {
@@ -154,6 +155,7 @@ namespace Signalizer.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost(Name = "SignalsList")]
         public async Task<object> SignalsListAsync()
         {

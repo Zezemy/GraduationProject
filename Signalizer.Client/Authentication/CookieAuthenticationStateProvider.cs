@@ -126,13 +126,18 @@ public class CookieAuthenticationStateProvider(IHttpClientFactory httpClientFact
             if (result.IsSuccessStatusCode)
             {
                 // need to refresh auth state
-                NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+                var authState = await GetAuthenticationStateAsync();
 
                 // success!
-                return new FormResult { Succeeded = true };
+                if (authenticated)
+                {
+                    NotifyAuthenticationStateChanged(Task.FromResult(authState));
+                    return new FormResult { Succeeded = true };
+                }
             }
         }
-        catch(Exception e) {
+        catch (Exception e)
+        {
             var log = e;
         }
 
@@ -209,10 +214,17 @@ public class CookieAuthenticationStateProvider(IHttpClientFactory httpClientFact
                     }
                 }
 
-                // set the principal
-                var id = new ClaimsIdentity(claims, nameof(CookieAuthenticationStateProvider));
-                user = new ClaimsPrincipal(id);
-                authenticated = true;
+                if (!roles.Any(x => x.Value == "User"))
+                {
+                    authenticated = false;
+                }
+                else
+                {
+                    // set the principal
+                    var id = new ClaimsIdentity(claims, nameof(CookieAuthenticationStateProvider));
+                    user = new ClaimsPrincipal(id);
+                    authenticated = true;
+                }
             }
         }
         catch { }
