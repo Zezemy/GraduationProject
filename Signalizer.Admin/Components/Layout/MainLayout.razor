@@ -12,13 +12,20 @@
 
         <AuthorizeView>
             <Authorized>
-                <MudPaper Class="" Style="width: 150px;" Outlined="true">
-                    <MudContainer Class="d-flex align-center">
-                        <MudAvatar Color="Color.Primary">@context.User.Identity?.Name[0]</MudAvatar>
-                        <MudSpacer />
-                        <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Href="logout"></MudIconButton>
-                    </MudContainer>
-                </MudPaper>
+                <MudTooltip>
+                    <ChildContent>
+                        <MudPaper Class="" Style="width: 150px;" Outlined="true">
+                            <MudContainer Class="d-flex align-center">
+                                <MudAvatar Color="Color.Primary">@context.User.Identity?.Name[0]</MudAvatar>
+                                <MudSpacer />
+                                <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Href="logout"></MudIconButton>
+                            </MudContainer>
+                        </MudPaper>
+                    </ChildContent>
+                    <TooltipContent>
+                        <MudText>@context.User.Identity?.Name</MudText>
+                    </TooltipContent>
+                </MudTooltip>
             </Authorized>
             <NotAuthorized>
                 <MudPaper Class=" pa-2 align-start d-flex" Style="width: 250px;" Outlined="true">

@@ -97,7 +97,10 @@ if (useOtlpExporter)
 {
     builder.Services.AddOpenTelemetry().UseOtlpExporter();
 }
-
+//builder.Services.ConfigureApplicationCookie(options => {
+//    options.Cookie.SameSite = SameSiteMode.None;
+//    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+//});
 var app = builder.Build();
 
 
